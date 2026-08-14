@@ -1,0 +1,20 @@
+# 依存関係・ビルド成果物
+node_modules/
+.next/
+out/
+build/
+
+# 環境変数（実値は絶対にコミットしない）
+.env
+.env.*
+!.env.example
+
+# エディタ・OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# ログ
+*.log
+npm-debug.log*
