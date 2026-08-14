@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { requireRole } from "@/lib/auth-guard";
 import { listEvents } from "@/lib/db/events";
-import { isPast } from "@/lib/utils/time";
+import { formatDateTimeShort, isPast } from "@/lib/utils/time";
 import type { SchoolEvent } from "@/types";
 
 const TYPE_LABEL = { practice: "練習", match: "試合" } as const;
@@ -69,7 +69,6 @@ export default async function EventsPage({
 }
 
 function EventRow({ schoolId, event }: { schoolId: string; event: SchoolEvent }) {
-  const date = new Date(event.startsAt);
   return (
     <li>
       <Link
@@ -79,13 +78,7 @@ function EventRow({ schoolId, event }: { schoolId: string; event: SchoolEvent })
         <div>
           <p className="font-medium">{event.title}</p>
           <p className="text-xs text-gray-500">
-            {date.toLocaleString("ja-JP", {
-              month: "numeric",
-              day: "numeric",
-              weekday: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDateTimeShort(event.startsAt)}
             {event.location ? ` ・ ${event.location}` : ""}
           </p>
         </div>

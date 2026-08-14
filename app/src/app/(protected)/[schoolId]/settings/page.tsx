@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/auth-guard";
 import { listInvitations } from "@/lib/db/invitations";
 import { listCategories, listClasses } from "@/lib/db/masters";
-import { isPast } from "@/lib/utils/time";
+import { formatDate, isPast } from "@/lib/utils/time";
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
@@ -86,7 +86,7 @@ export default async function SettingsPage({
                 <p className="text-xs text-gray-500">
                   {expired
                     ? "期限切れ"
-                    : `有効期限: ${new Date(inv.expiresAt).toLocaleDateString("ja-JP")}`}
+                    : `有効期限: ${formatDate(inv.expiresAt)}`}
                 </p>
                 <form action={deleteInvitationAction}>
                   <input type="hidden" name="schoolId" value={schoolId} />

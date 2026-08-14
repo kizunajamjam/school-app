@@ -6,19 +6,11 @@ import { listAttendanceForEvent, listAttendanceLogsByChild } from "@/lib/db/atte
 import { listChildren, listChildrenWithGuardianName } from "@/lib/db/children";
 import { FormError } from "@/components/ui/FormError";
 import { STATUS_LABEL } from "@/lib/constants/attendance";
+import { formatDateTimeLong, formatTimestamp } from "@/lib/utils/time";
 import type { AttendanceLog, AttendanceStatus, ChildWithLabels } from "@/types";
 
 import { deleteEventAction } from "./actions";
 import { AttendanceStatusButton } from "./AttendanceStatusButton";
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("ja-JP", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function EventDetailPage({
   params,
@@ -51,23 +43,12 @@ export default async function EventDetailPage({
     counts[attendanceByChild.get(r.id) ?? "undecided"] += 1;
   }
 
-  const date = new Date(event.startsAt);
-
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
         <p className="text-xs text-gray-500">{event.type === "practice" ? "練習" : "試合"}</p>
         <h2 className="text-lg font-bold">{event.title}</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          {date.toLocaleString("ja-JP", {
-            year: "numeric",
-            month: "numeric",
-            day: "numeric",
-            weekday: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
+        <p className="mt-1 text-sm text-gray-600">{formatDateTimeLong(event.startsAt)}</p>
         {event.location && <p className="text-sm text-gray-600">場所: {event.location}</p>}
         {event.note && <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">{event.note}</p>}
       </div>
@@ -182,7 +163,7 @@ function AttendanceRow({
                 {logs.map((log) => (
                   <li key={log.id} className="flex items-center gap-2 text-xs text-gray-600">
                     <span className="tabular-nums text-gray-400">
-                      {formatDateTime(log.changedAt)}
+                      {formatTimestamp(log.changedAt)}
                     </span>
                     <span className="font-medium">{STATUS_LABEL[log.status]}</span>
                     {log.changedByName && <span className="text-gray-400">{log.changedByName}</span>}
