@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#059669" />
+    <title>オフライン｜school-app</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #f9fafb;
+        color: #111827;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Hiragino Kaku Gothic ProN",
+          "Noto Sans JP",
+          sans-serif;
+      }
+      .card {
+        width: 100%;
+        max-width: 24rem;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 1.75rem 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.125rem;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.7;
+        color: #4b5563;
+      }
+      button {
+        width: 100%;
+        padding: 0.85rem;
+        border: 0;
+        border-radius: 0.75rem;
+        background: #059669;
+        color: #fff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>オフラインです</h1>
+      <p>
+        インターネットに接続できないため、最新の情報を表示できません。<br />
+        電波状況をご確認のうえ、もう一度お試しください。
+      </p>
+      <button type="button" onclick="location.reload()">再読み込み</button>
+    </div>
+  </body>
+</html>
