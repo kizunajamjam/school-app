@@ -51,7 +51,7 @@ export default async function SettingsPage({
 
       <MasterSection
         title="クラス"
-        description="火曜クラス、初級クラスなどの区分です。会員1人につき1つ設定できます。"
+        description="火曜クラス、初級クラスなどの区分です。掛け持ちできるため、会員1人に複数設定できます。"
         placeholder="例: 火曜クラス"
         items={classes}
         schoolId={schoolId}
