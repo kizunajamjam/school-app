@@ -12,6 +12,7 @@ import {
   type ChildSortKey,
 } from "@/lib/constants/children";
 import { FormError } from "@/components/ui/FormError";
+import { messageForCode } from "@/lib/errors";
 import { MasterSelect } from "@/components/ui/MasterSelect";
 import type { Category, ChildWithLabels, SchoolClass } from "@/types";
 
@@ -113,7 +114,7 @@ export default async function ChildrenPage({
         )}
       </div>
 
-      <FormError message={error} />
+      <FormError message={messageForCode(error)} />
 
       {isAdmin && !hasMasters && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">

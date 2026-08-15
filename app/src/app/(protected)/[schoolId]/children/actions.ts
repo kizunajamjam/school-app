@@ -6,7 +6,7 @@ import { requireRole, requireRoleForAction } from "@/lib/auth-guard";
 import { createChild, deleteChild, updateChild } from "@/lib/db/children";
 import { createInvitation } from "@/lib/db/invitations";
 import { listCategories, listClasses } from "@/lib/db/masters";
-import { ERROR_MESSAGES, isErrorResult } from "@/lib/errors";
+import { isErrorResult } from "@/lib/errors";
 
 // 会員一覧から招待リンクを発行する（設定画面のものと違い、この画面へ戻る）。
 export async function createInvitationFromChildrenAction(formData: FormData) {
@@ -15,7 +15,7 @@ export async function createInvitationFromChildrenAction(formData: FormData) {
 
   const { error } = await createInvitation(schoolId, user.id);
   if (error) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.INV_005)}`);
+    redirect(`/${schoolId}/children?error=INV_005`);
   }
 
   redirect(`/${schoolId}/children`);
@@ -45,19 +45,19 @@ export async function createChildAction(formData: FormData) {
   const schoolId = String(formData.get("schoolId") ?? "");
   const guard = await requireRoleForAction(schoolId, ["guardian", "admin"]);
   if (isErrorResult(guard)) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(guard.error)}`);
+    redirect(`/${schoolId}/children?error=${guard.code}`);
   }
 
   const name = String(formData.get("name") ?? "").trim();
   const grade = String(formData.get("grade") ?? "").trim() || null;
 
   if (!name) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_002)}`);
+    redirect(`/${schoolId}/children?error=CHD_002`);
   }
 
   const masters = await resolveMasterIds(schoolId, formData);
   if (!masters) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_005)}`);
+    redirect(`/${schoolId}/children?error=CHD_005`);
   }
 
   const { error } = await createChild({
@@ -69,7 +69,7 @@ export async function createChildAction(formData: FormData) {
     classId: masters.classId,
   });
   if (error) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_003)}`);
+    redirect(`/${schoolId}/children?error=CHD_003`);
   }
 
   redirect(`/${schoolId}/children`);
@@ -83,19 +83,19 @@ export async function updateChildAction(formData: FormData) {
 
   const guard = await requireRoleForAction(schoolId, ["guardian", "admin"]);
   if (isErrorResult(guard)) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(guard.error)}`);
+    redirect(`/${schoolId}/children?error=${guard.code}`);
   }
 
   const name = String(formData.get("name") ?? "").trim();
   const grade = String(formData.get("grade") ?? "").trim() || null;
 
   if (!name) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_002)}`);
+    redirect(`/${schoolId}/children?error=CHD_002`);
   }
 
   const masters = await resolveMasterIds(schoolId, formData);
   if (!masters) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_005)}`);
+    redirect(`/${schoolId}/children?error=CHD_005`);
   }
 
   // 他人の子どもへの更新は RLS が拒否する。
@@ -106,7 +106,7 @@ export async function updateChildAction(formData: FormData) {
     classId: masters.classId,
   });
   if (error) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(ERROR_MESSAGES.CHD_004)}`);
+    redirect(`/${schoolId}/children?error=CHD_004`);
   }
 
   redirect(`/${schoolId}/children`);
@@ -118,7 +118,7 @@ export async function deleteChildAction(formData: FormData) {
 
   const guard = await requireRoleForAction(schoolId, ["guardian", "admin"]);
   if (isErrorResult(guard)) {
-    redirect(`/${schoolId}/children?error=${encodeURIComponent(guard.error)}`);
+    redirect(`/${schoolId}/children?error=${guard.code}`);
   }
 
   // 所有者(guardian_id)以外からの削除は RLS が拒否する。

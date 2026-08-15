@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { messageForCode } from "@/lib/errors";
 
 import { login } from "./actions";
 
@@ -18,7 +19,7 @@ export default async function LoginPage({
       <h2 className="text-lg font-semibold">ログイン</h2>
       <form action={login} className="space-y-4">
         <input type="hidden" name="next" value={next} />
-        <FormError message={error} />
+        <FormError message={messageForCode(error)} />
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium">
             メールアドレス

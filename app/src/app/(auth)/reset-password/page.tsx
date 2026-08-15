@@ -1,5 +1,6 @@
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { messageForCode } from "@/lib/errors";
 
 import { resetPassword } from "./actions";
 
@@ -14,7 +15,7 @@ export default async function ResetPasswordPage({
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">新しいパスワードを設定</h2>
       <form action={resetPassword} className="space-y-4">
-        <FormError message={error} />
+        <FormError message={messageForCode(error)} />
         <div>
           <label htmlFor="password" className="mb-1 block text-sm font-medium">
             新しいパスワード（8文字以上）

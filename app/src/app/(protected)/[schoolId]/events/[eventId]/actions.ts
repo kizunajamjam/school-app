@@ -16,7 +16,7 @@ export async function setAttendanceAction(formData: FormData) {
 
   const guard = await requireRoleForAction(schoolId, ["admin", "guardian"]);
   if (isErrorResult(guard)) {
-    redirect(`/${schoolId}/events/${eventId}?error=${encodeURIComponent(guard.error)}`);
+    redirect(`/${schoolId}/events/${eventId}?error=${guard.code}`);
   }
 
   const { error } = await upsertAttendance({
@@ -27,7 +27,7 @@ export async function setAttendanceAction(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/${schoolId}/events/${eventId}?error=${encodeURIComponent("出欠の更新に失敗しました。")}`);
+    redirect(`/${schoolId}/events/${eventId}?error=ATT_001`);
   }
 
   redirect(`/${schoolId}/events/${eventId}`);
@@ -39,7 +39,7 @@ export async function deleteEventAction(formData: FormData) {
 
   const guard = await requireRoleForAction(schoolId, ["admin"]);
   if (isErrorResult(guard)) {
-    redirect(`/${schoolId}/events/${eventId}?error=${encodeURIComponent(guard.error)}`);
+    redirect(`/${schoolId}/events/${eventId}?error=${guard.code}`);
   }
 
   await deleteEvent(eventId);

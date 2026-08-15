@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/supabase/server";
 import { acceptInvitationAsGuardian, getInvitationByTokenWithSchoolName } from "@/lib/db/invitations";
+import { isPast } from "@/lib/utils/time";
 
 export async function acceptInvite(formData: FormData) {
   const token = String(formData.get("token") ?? "");
@@ -15,16 +16,17 @@ export async function acceptInvite(formData: FormData) {
 
   const result = await getInvitationByTokenWithSchoolName(token);
   if (!result) {
-    redirect(`/invite/${token}?error=invalid`);
+    redirect(`/invite/${token}?error=INV_001`);
   }
 
-  if (new Date(result.invitation.expiresAt).getTime() < Date.now()) {
-    redirect(`/invite/${token}?error=expired`);
+  if (isPast(result.invitation.expiresAt)) {
+    redirect(`/invite/${token}?error=INV_002`);
   }
 
   const { error } = await acceptInvitationAsGuardian(result.invitation.schoolId, user.id);
   if (error) {
-    redirect(`/invite/${token}?error=failed`);
+    console.error("[acceptInvite]", error);
+    redirect(`/invite/${token}?error=INV_004`);
   }
 
   redirect("/dashboard");

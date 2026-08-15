@@ -3,6 +3,7 @@ import { listInvitations } from "@/lib/db/invitations";
 import { listCategories, listClasses } from "@/lib/db/masters";
 import { formatDate, isPast } from "@/lib/utils/time";
 import { FormError } from "@/components/ui/FormError";
+import { messageForCode } from "@/lib/errors";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 import {
@@ -35,7 +36,7 @@ export default async function SettingsPage({
 
   return (
     <div className="space-y-10">
-      <FormError message={error} />
+      <FormError message={messageForCode(error)} />
 
       <MasterSection
         title="カテゴリー"

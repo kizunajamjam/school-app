@@ -1,11 +1,18 @@
 // ドメイン別エラーコード。
 // createError() はサーバー側で detail をログに残し、クライアントには
 // 定型の日本語メッセージ + コードのみを返す(内部情報を漏らさない)。
+//
+// 画面へのエラー伝達は URL クエリで行うが、載せるのは**コードのみ**にする。
+// メッセージ本文を載せると、攻撃者が任意の文言入りURLを送りつけて
+// アプリ由来の案内に見せかけられるため(例: 偽の再入力要求)。
+// 未知のコードは messageForCode() が無視するので、何も表示されない。
 
 export const ERROR_MESSAGES = {
   AUTH_001: "ログインが必要です。",
   AUTH_002: "メールアドレスまたはパスワードが正しくありません。",
   AUTH_003: "認証処理に失敗しました。",
+  AUTH_004: "お名前を入力してください。",
+  AUTH_005: "リンクが無効か、有効期限が切れています。",
 
   SCH_001: "スクールが見つかりません。",
 
@@ -59,6 +66,9 @@ export function isErrorResult(value: unknown): value is ErrorResult {
   );
 }
 
-export function formatError(result: ErrorResult): string {
-  return `${result.error} [${result.code}]`;
+// URL クエリ等から受け取った文字列をコードとして解決する。
+// 未知の値なら undefined を返し、画面には何も出さない。
+export function messageForCode(code: string | undefined): string | undefined {
+  if (!code) return undefined;
+  return ERROR_MESSAGES[code as ErrorCode];
 }

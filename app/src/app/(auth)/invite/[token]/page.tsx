@@ -3,16 +3,11 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getInvitationByTokenWithSchoolName } from "@/lib/db/invitations";
 import { isPast } from "@/lib/utils/time";
+import { messageForCode } from "@/lib/errors";
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 import { acceptInvite } from "./actions";
-
-const ERROR_TEXT: Record<string, string> = {
-  invalid: "招待リンクが無効です。",
-  expired: "招待リンクの有効期限が切れています。運営者に再発行を依頼してください。",
-  failed: "招待の受諾に失敗しました。時間をおいて再度お試しください。",
-};
 
 export default async function InvitePage({
   params,
@@ -42,7 +37,7 @@ export default async function InvitePage({
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">「{result.schoolName}」への招待</h2>
-      <FormError message={error ? ERROR_TEXT[error] : undefined} />
+      <FormError message={messageForCode(error)} />
 
       {isExpired ? (
         <p className="text-sm text-gray-600">

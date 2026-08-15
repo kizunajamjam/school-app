@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import { requireRole } from "@/lib/auth-guard";
 import { createEvent } from "@/lib/db/events";
-import { ERROR_MESSAGES } from "@/lib/errors";
 import { jstInputToIso } from "@/lib/utils/time";
 import type { EventType } from "@/types";
 
@@ -20,7 +19,7 @@ export async function createEventAction(formData: FormData) {
   const note = String(formData.get("note") ?? "").trim() || null;
 
   if (!title || !date || !time) {
-    redirect(`/${schoolId}/events/new?error=${encodeURIComponent(ERROR_MESSAGES.EVT_002)}`);
+    redirect(`/${schoolId}/events/new?error=EVT_002`);
   }
 
   // 入力欄の値は日本時間。サーバーのタイムゾーンに引きずられないよう明示的に変換する。
@@ -37,7 +36,7 @@ export async function createEventAction(formData: FormData) {
   });
 
   if (error || !data) {
-    redirect(`/${schoolId}/events/new?error=${encodeURIComponent(ERROR_MESSAGES.EVT_003)}`);
+    redirect(`/${schoolId}/events/new?error=EVT_003`);
   }
 
   redirect(`/${schoolId}/events/${data.id}`);

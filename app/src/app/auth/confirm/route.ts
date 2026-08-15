@@ -20,5 +20,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  redirect(`/login?error=${encodeURIComponent("リンクが無効か期限切れです。")}`);
+  redirect("/login?error=AUTH_005");
 }

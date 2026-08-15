@@ -29,6 +29,16 @@ export async function listAttendanceForEvent(eventId: string): Promise<Attendanc
   return (data ?? []).map(mapAttendance);
 }
 
+// 指定した子どもたちの全イベント分の出欠。イベント一覧で回答状況を出すために使う。
+// 未回答のイベントには行が無いので、呼び出し側で「未定」として扱うこと。
+export async function listAttendanceForChildren(childIds: string[]): Promise<Attendance[]> {
+  if (childIds.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase.from("attendance").select("*").in("child_id", childIds);
+  return (data ?? []).map(mapAttendance);
+}
+
 // 子どもごとにまとめた変更履歴（新しい順）。
 export async function listAttendanceLogsByChild(
   eventId: string,

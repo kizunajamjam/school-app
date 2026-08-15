@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { ERROR_MESSAGES } from "@/lib/errors";
 
 export async function signup(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
@@ -12,9 +11,7 @@ export async function signup(formData: FormData) {
   const next = String(formData.get("next") ?? "/dashboard");
 
   if (!displayName) {
-    redirect(
-      `/signup?next=${encodeURIComponent(next)}&error=${encodeURIComponent("お名前を入力してください。")}`,
-    );
+    redirect(`/signup?next=${encodeURIComponent(next)}&error=AUTH_004`);
   }
 
   const supabase = await createClient();
@@ -31,9 +28,7 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error("[signup]", error.status, error.code, error.message);
-    redirect(
-      `/signup?next=${encodeURIComponent(next)}&error=${encodeURIComponent(ERROR_MESSAGES.AUTH_003)}`,
-    );
+    redirect(`/signup?next=${encodeURIComponent(next)}&error=AUTH_003`);
   }
 
   if (data.session) {

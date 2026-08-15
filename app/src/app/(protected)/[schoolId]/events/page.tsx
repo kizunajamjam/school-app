@@ -1,9 +1,12 @@
 import Link from "next/link";
 
 import { requireRole } from "@/lib/auth-guard";
+import { listAttendanceForChildren } from "@/lib/db/attendance";
+import { listChildren } from "@/lib/db/children";
 import { listEvents } from "@/lib/db/events";
+import { STATUS_LABEL, STATUS_STYLE } from "@/lib/constants/attendance";
 import { formatDateTimeShort, isPast } from "@/lib/utils/time";
-import type { SchoolEvent } from "@/types";
+import type { AttendanceStatus, Child, SchoolEvent } from "@/types";
 
 const TYPE_LABEL = { practice: "練習", match: "試合" } as const;
 
@@ -13,14 +16,47 @@ export default async function EventsPage({
   params: Promise<{ schoolId: string }>;
 }) {
   const { schoolId } = await params;
-  const { role } = await requireRole(schoolId, ["admin", "guardian"]);
+  const { user, role } = await requireRole(schoolId, ["admin", "guardian"]);
   const events = await listEvents(schoolId);
+
+  // 保護者には、イベントごとに自分の子どもの回答状況を出す。
+  // 未回答のイベントには attendance 行が無いので「未定」として扱う。
+  let myChildren: Child[] = [];
+  const statusByEvent = new Map<string, Map<string, AttendanceStatus>>();
+
+  if (role === "guardian") {
+    myChildren = (await listChildren(schoolId)).filter((c) => c.guardianId === user.id);
+    const rows = await listAttendanceForChildren(myChildren.map((c) => c.id));
+    for (const row of rows) {
+      const forEvent = statusByEvent.get(row.eventId) ?? new Map<string, AttendanceStatus>();
+      forEvent.set(row.childId, row.status);
+      statusByEvent.set(row.eventId, forEvent);
+    }
+  }
 
   const upcoming = events.filter((e) => !isPast(e.startsAt));
   const past = events
     .filter((e) => isPast(e.startsAt))
     .slice()
     .reverse();
+
+  // 未回答が残っている今後のイベント数（保護者向けの気づき用）
+  const unansweredCount =
+    role === "guardian" && myChildren.length > 0
+      ? upcoming.filter((e) =>
+          myChildren.some((c) => (statusByEvent.get(e.id)?.get(c.id) ?? "undecided") === "undecided"),
+        ).length
+      : 0;
+
+  const renderRow = (event: SchoolEvent) => (
+    <EventRow
+      key={event.id}
+      schoolId={schoolId}
+      event={event}
+      myChildren={myChildren}
+      statuses={statusByEvent.get(event.id)}
+    />
+  );
 
   return (
     <div className="space-y-6">
@@ -38,6 +74,12 @@ export default async function EventsPage({
         )}
       </div>
 
+      {unansweredCount > 0 && (
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          未回答のイベントが {unansweredCount} 件あります。
+        </p>
+      )}
+
       <section className="space-y-3">
         <h3 className="text-sm font-semibold text-gray-500">今後の予定</h3>
         {upcoming.length === 0 ? (
@@ -46,45 +88,70 @@ export default async function EventsPage({
             {role === "admin" && "右上の＋から作成してください。"}
           </p>
         ) : (
-          <ul className="space-y-2">
-            {upcoming.map((e) => (
-              <EventRow key={e.id} schoolId={schoolId} event={e} />
-            ))}
-          </ul>
+          <ul className="space-y-2">{upcoming.map(renderRow)}</ul>
         )}
       </section>
 
       {past.length > 0 && (
         <section className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-500">過去のイベント</h3>
-          <ul className="space-y-2">
-            {past.map((e) => (
-              <EventRow key={e.id} schoolId={schoolId} event={e} />
-            ))}
-          </ul>
+          <ul className="space-y-2">{past.map(renderRow)}</ul>
         </section>
       )}
     </div>
   );
 }
 
-function EventRow({ schoolId, event }: { schoolId: string; event: SchoolEvent }) {
+function EventRow({
+  schoolId,
+  event,
+  myChildren,
+  statuses,
+}: {
+  schoolId: string;
+  event: SchoolEvent;
+  // 保護者の場合のみ渡る。管理者は空配列。
+  myChildren: Child[];
+  statuses: Map<string, AttendanceStatus> | undefined;
+}) {
+  const showsMyAnswer = myChildren.length > 0;
+  const isSingleChild = myChildren.length === 1;
+
   return (
     <li>
       <Link
         href={`/${schoolId}/events/${event.id}`}
-        className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200"
+        className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200"
       >
-        <div>
-          <p className="font-medium">{event.title}</p>
-          <p className="text-xs text-gray-500">
-            {formatDateTimeShort(event.startsAt)}
-            {event.location ? ` ・ ${event.location}` : ""}
-          </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-medium">{event.title}</p>
+            <p className="text-xs text-gray-500">
+              {formatDateTimeShort(event.startsAt)}
+              {event.location ? ` ・ ${event.location}` : ""}
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+            {TYPE_LABEL[event.type]}
+          </span>
         </div>
-        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-          {TYPE_LABEL[event.type]}
-        </span>
+
+        {showsMyAnswer && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-100 pt-2">
+            {myChildren.map((child) => {
+              const status = statuses?.get(child.id) ?? "undecided";
+              return (
+                <span key={child.id} className="flex items-center gap-1.5 text-xs">
+                  {/* 1人だけなら名前は自明なので出さない */}
+                  {!isSingleChild && <span className="text-gray-500">{child.name}</span>}
+                  <span className={`rounded-full px-2 py-0.5 ${STATUS_STYLE[status]}`}>
+                    {STATUS_LABEL[status]}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </Link>
     </li>
   );

@@ -5,6 +5,7 @@ import { getEvent } from "@/lib/db/events";
 import { listAttendanceForEvent, listAttendanceLogsByChild } from "@/lib/db/attendance";
 import { listChildren, listChildrenWithGuardianName } from "@/lib/db/children";
 import { FormError } from "@/components/ui/FormError";
+import { messageForCode } from "@/lib/errors";
 import { STATUS_LABEL } from "@/lib/constants/attendance";
 import { formatDateTimeLong, formatTimestamp } from "@/lib/utils/time";
 import type { AttendanceLog, AttendanceStatus, ChildWithLabels } from "@/types";
@@ -65,7 +66,7 @@ export default async function EventDetailPage({
         </div>
       )}
 
-      <FormError message={error} />
+      <FormError message={messageForCode(error)} />
 
       <section className="space-y-3">
         <div>

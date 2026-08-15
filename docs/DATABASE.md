@@ -10,6 +10,7 @@ Supabase (PostgreSQL) を使用。マイグレーションは `supabase/migratio
 6. `20260814_add_categories_and_classes.sql` — カテゴリー・クラスのマスタ追加
 7. `20260814_add_attendance_logs.sql` — 出欠の変更履歴
 8. `20260815_lock_school_creation.sql` — スクール新規作成の禁止
+9. `20260815_tighten_profiles_select.sql` — profiles の閲覧範囲を絞る
 
 ## 前提: 単一スクール専用アプリ
 
@@ -59,6 +60,8 @@ RLSは `get_my_role(p_school_id)`（`SECURITY DEFINER`）を軸に構成：
 - `children` / `attendance`: 管理者はスクール内全件、保護者は自分の子どもの分のみ
 - `events` / `categories` / `classes`: 閲覧はメンバー全員、作成・変更・削除は管理者のみ
 - `invitations`: 閲覧・作成・削除とも管理者のみ
+- `profiles`: 自分自身／管理者から見た自スクールのメンバー／自分が所属するスクールの管理者、のみ閲覧可。
+  保護者が他の保護者のプロフィール（氏名）を読むことはできない
 - 招待受諾（`acceptInvitationAsGuardian`）は新規メンバーがまだ`school_members`に存在しないため、`lib/supabase/admin.ts` の service role クライアントでRLSをバイパスして実行する
 
 ## ハマりどころ（実際に踏んだもの）

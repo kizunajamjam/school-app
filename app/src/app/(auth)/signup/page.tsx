@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { FormError } from "@/components/ui/FormError";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { messageForCode } from "@/lib/errors";
 
 import { signup } from "./actions";
 
@@ -32,7 +33,7 @@ export default async function SignupPage({
       <h2 className="text-lg font-semibold">新規登録（保護者・運営者共通）</h2>
       <form action={signup} className="space-y-4">
         <input type="hidden" name="next" value={next} />
-        <FormError message={error} />
+        <FormError message={messageForCode(error)} />
         <div>
           <label htmlFor="displayName" className="mb-1 block text-sm font-medium">
             お名前

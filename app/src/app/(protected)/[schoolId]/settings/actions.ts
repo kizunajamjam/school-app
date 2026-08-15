@@ -10,7 +10,7 @@ import {
   deleteCategory,
   deleteClass,
 } from "@/lib/db/masters";
-import { ERROR_MESSAGES } from "@/lib/errors";
+import type { ErrorCode } from "@/lib/errors";
 
 export async function createInvitationAction(formData: FormData) {
   const schoolId = String(formData.get("schoolId") ?? "");
@@ -18,7 +18,7 @@ export async function createInvitationAction(formData: FormData) {
 
   const { error } = await createInvitation(schoolId, user.id);
   if (error) {
-    redirect(`/${schoolId}/settings?error=${encodeURIComponent(ERROR_MESSAGES.INV_005)}`);
+    redirect(`/${schoolId}/settings?error=INV_005`);
   }
 
   redirect(`/${schoolId}/settings`);
@@ -33,9 +33,9 @@ export async function deleteInvitationAction(formData: FormData) {
   redirect(`/${schoolId}/settings`);
 }
 
-// unique (school_id, name) 違反は 23505 で返るため、重複は専用メッセージにする。
-function masterErrorMessage(error: { code?: string } | null, fallback: string) {
-  if (error?.code === "23505") return ERROR_MESSAGES.MST_002;
+// unique (school_id, name) 違反は 23505 で返るため、重複は専用コードにする。
+function masterErrorCode(error: { code?: string } | null, fallback: ErrorCode): ErrorCode {
+  if (error?.code === "23505") return "MST_002";
   return fallback;
 }
 
@@ -45,13 +45,12 @@ export async function createCategoryAction(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    redirect(`/${schoolId}/settings?error=${encodeURIComponent(ERROR_MESSAGES.MST_001)}`);
+    redirect(`/${schoolId}/settings?error=MST_001`);
   }
 
   const { error } = await createCategory(schoolId, name);
   if (error) {
-    const message = masterErrorMessage(error, ERROR_MESSAGES.MST_003);
-    redirect(`/${schoolId}/settings?error=${encodeURIComponent(message)}`);
+    redirect(`/${schoolId}/settings?error=${masterErrorCode(error, "MST_003")}`);
   }
 
   redirect(`/${schoolId}/settings`);
@@ -72,13 +71,12 @@ export async function createClassAction(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) {
-    redirect(`/${schoolId}/settings?error=${encodeURIComponent(ERROR_MESSAGES.MST_001)}`);
+    redirect(`/${schoolId}/settings?error=MST_001`);
   }
 
   const { error } = await createClass(schoolId, name);
   if (error) {
-    const message = masterErrorMessage(error, ERROR_MESSAGES.MST_004);
-    redirect(`/${schoolId}/settings?error=${encodeURIComponent(message)}`);
+    redirect(`/${schoolId}/settings?error=${masterErrorCode(error, "MST_004")}`);
   }
 
   redirect(`/${schoolId}/settings`);

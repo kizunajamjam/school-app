@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth-guard";
 import { FormError } from "@/components/ui/FormError";
+import { messageForCode } from "@/lib/errors";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 import { createEventAction } from "./actions";
@@ -20,7 +21,7 @@ export default async function NewEventPage({
       <h2 className="text-lg font-semibold">イベントを作成</h2>
       <form action={createEventAction} className="space-y-4">
         <input type="hidden" name="schoolId" value={schoolId} />
-        <FormError message={error} />
+        <FormError message={messageForCode(error)} />
         <div>
           <label className="mb-1 block text-sm font-medium" htmlFor="title">
             イベント名
