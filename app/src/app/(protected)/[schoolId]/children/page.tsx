@@ -22,6 +22,7 @@ import { AddChildButton } from "./AddChildButton";
 import { ChildrenListControls } from "./ChildrenListControls";
 import { InviteGuardianButton } from "./InviteGuardianButton";
 import { deleteChildAction, updateChildAction } from "./actions";
+import { getAppUrl } from "@/lib/utils/url";
 
 const UNSET_ORDER = Number.MAX_SAFE_INTEGER;
 
@@ -117,7 +118,7 @@ export default async function ChildrenPage({
   let inviteUrl: string | null = null;
   if (isAdmin) {
     const active = (await listInvitations(schoolId)).find((inv) => !isPast(inv.expiresAt));
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const appUrl = await getAppUrl();
     inviteUrl = active ? `${appUrl}/invite/${active.token}` : null;
   }
 

@@ -5,6 +5,7 @@ import { formatDate, isPast } from "@/lib/utils/time";
 import { FormError } from "@/components/ui/FormError";
 import { messageForCode } from "@/lib/errors";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { getAppUrl } from "@/lib/utils/url";
 
 import {
   createCategoryAction,
@@ -32,7 +33,7 @@ export default async function SettingsPage({
     listClasses(schoolId),
   ]);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const appUrl = await getAppUrl();
 
   return (
     <div className="space-y-10">

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { getAppUrl } from "@/lib/utils/url";
 
 export async function signup(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
@@ -15,7 +16,7 @@ export async function signup(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getAppUrl();
 
   const { data, error } = await supabase.auth.signUp({
     email,
