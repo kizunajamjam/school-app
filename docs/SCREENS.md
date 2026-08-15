@@ -11,7 +11,9 @@
 | `/auth/confirm` | - | - | Supabaseメールリンク（登録確認・パスワードリセット）のRoute Handler |
 | `/dashboard` | 必要 | member | 所属スクール一覧（本アプリは単一スクール専用なので実質1件） |
 | `/[schoolId]/events` | 必要 | admin \| guardian | イベント一覧（今後の予定・過去）。右上の＋から作成（管理者のみ表示）。保護者にはイベントごとに自分の子どもの回答状況を表示し、未回答が残っていれば件数を告知する |
-| `/[schoolId]/events/new` | 必要 | admin | イベント作成 |
+| `/[schoolId]/events/new` | 必要 | admin | イベント作成。締切も設定できる |
+| `/[schoolId]/events/[eventId]/edit` | 必要 | admin | イベント編集。日時・名称・場所・締切を変えると保護者へ通知が飛ぶ。出欠は保持される |
+| `/notifications` | 必要 | member | お知らせ一覧。未読はヘッダーのベルにバッジで出る |
 | `/[schoolId]/events/[eventId]` | 必要 | admin \| guardian | イベント詳細・出欠入力（管理者は全会員、保護者は自分の子どものみ）。会員1人＝1行、出欠バッジのタップでポップアップ→確認ダイアログ、名前のタップで回答履歴 |
 | `/[schoolId]/children` | 必要 | admin \| guardian | 会員1人＝1行、タップで詳細編集を展開。右上の＋は、管理者=保護者への招待リンク発行/コピー・共有、保護者=お子さま登録。2件以上で絞り込み（カテゴリー/クラス、未設定のみ も選べる）と並び替え（登録順/名前順/カテゴリー順/クラス順）を表示。条件は `?category=&class=&sort=` としてURLに持つ |
 | `/[schoolId]/settings` | 必要 | admin | カテゴリー・クラスのマスタ管理、招待リンクの発行・一覧・失効 |

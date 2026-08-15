@@ -64,9 +64,23 @@ export type SchoolEvent = {
   title: string;
   type: EventType;
   startsAt: string;
+  // 出欠回答の締切。null は締切なし。過ぎると保護者は変更できない（管理者は可）。
+  deadlineAt: string | null;
   location: string | null;
   note: string | null;
   createdBy: string;
+  createdAt: string;
+};
+
+export type NotificationType = "event_created" | "event_updated" | "deadline_soon";
+
+export type AppNotification = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  readAt: string | null;
   createdAt: string;
 };
 

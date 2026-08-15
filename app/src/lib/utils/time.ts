@@ -17,6 +17,26 @@ export function jstInputToIso(date: string, time: string): string {
   return new Date(`${date}T${time}:00${JST_OFFSET}`).toISOString();
 }
 
+// 逆向き。編集フォームの初期値に使う。
+// en-CA ロケールは YYYY-MM-DD 形式で返すので、input[type=date] にそのまま入る。
+export function jstParts(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE }),
+    time: d.toLocaleTimeString("en-GB", {
+      timeZone: APP_TIME_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  };
+}
+
+// 締切を過ぎているか。null（締切なし）は常に false。
+export function isDeadlinePassed(deadlineAt: string | null): boolean {
+  if (!deadlineAt) return false;
+  return isPast(deadlineAt);
+}
+
 // 例: 2026/8/22(土) 09:00
 export function formatDateTimeLong(iso: string): string {
   return new Date(iso).toLocaleString("ja-JP", {

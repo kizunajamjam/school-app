@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireRole } from "@/lib/auth-guard";
@@ -7,8 +8,13 @@ import { listChildren, listChildrenWithGuardianName } from "@/lib/db/children";
 import { ClassBadges } from "@/components/ui/ClassBadges";
 import { FormError } from "@/components/ui/FormError";
 import { messageForCode } from "@/lib/errors";
-import { STATUS_LABEL } from "@/lib/constants/attendance";
-import { formatDateTimeLong, formatTimestamp } from "@/lib/utils/time";
+import { STATUS_LABEL, STATUS_STYLE } from "@/lib/constants/attendance";
+import {
+  formatDateTimeLong,
+  formatDateTimeShort,
+  formatTimestamp,
+  isDeadlinePassed,
+} from "@/lib/utils/time";
 import type { AttendanceLog, AttendanceStatus, ChildWithLabels } from "@/types";
 
 import { deleteEventAction } from "./actions";
@@ -45,6 +51,10 @@ export default async function EventDetailPage({
     counts[attendanceByChild.get(r.id) ?? "undecided"] += 1;
   }
 
+  // 締切後に変更できるのは管理者のみ
+  const deadlinePassed = isDeadlinePassed(event.deadlineAt);
+  const canEditAttendance = role === "admin" || !deadlinePassed;
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200">
@@ -53,6 +63,27 @@ export default async function EventDetailPage({
         <p className="mt-1 text-sm text-gray-600">{formatDateTimeLong(event.startsAt)}</p>
         {event.location && <p className="text-sm text-gray-600">場所: {event.location}</p>}
         {event.note && <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">{event.note}</p>}
+
+        {event.deadlineAt && (
+          <p
+            className={`mt-2 inline-block rounded-full px-2 py-0.5 text-xs ${
+              deadlinePassed ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"
+            }`}
+          >
+            {deadlinePassed
+              ? `回答締切済み（${formatDateTimeShort(event.deadlineAt)}）`
+              : `回答締切 ${formatDateTimeShort(event.deadlineAt)}`}
+          </p>
+        )}
+
+        {role === "admin" && (
+          <Link
+            href={`/${schoolId}/events/${eventId}/edit`}
+            className="mt-3 block rounded-xl bg-gray-100 py-2 text-center text-sm font-medium text-gray-700"
+          >
+            イベントを編集
+          </Link>
+        )}
       </div>
 
       {role === "admin" && (
@@ -75,7 +106,9 @@ export default async function EventDetailPage({
             {role === "admin" ? "出欠状況" : "お子さまの出欠"}
           </h3>
           <p className="mt-1 text-xs text-gray-400">
-            出欠バッジをタップすると変更できます（確認あり）。名前をタップすると回答履歴を表示します。
+            {canEditAttendance
+              ? "出欠バッジをタップすると変更できます（確認あり）。名前をタップすると回答履歴を表示します。"
+              : "回答は締め切られました。名前をタップすると回答履歴を表示します。"}
           </p>
         </div>
 
@@ -94,6 +127,7 @@ export default async function EventDetailPage({
                 guardianName={child.guardianName}
                 status={attendanceByChild.get(child.id) ?? "undecided"}
                 logs={logsByChild.get(child.id) ?? []}
+                canEdit={canEditAttendance}
               />
             ))}
           </ul>
@@ -120,6 +154,7 @@ function AttendanceRow({
   guardianName,
   status,
   logs,
+  canEdit,
 }: {
   schoolId: string;
   eventId: string;
@@ -127,6 +162,7 @@ function AttendanceRow({
   guardianName?: string;
   status: AttendanceStatus;
   logs: AttendanceLog[];
+  canEdit: boolean;
 }) {
   return (
     <li className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-gray-200">
@@ -174,13 +210,22 @@ function AttendanceRow({
         </details>
 
         <div className="shrink-0">
-          <AttendanceStatusButton
-            schoolId={schoolId}
-            eventId={eventId}
-            childId={child.id}
-            childName={child.name}
-            status={status}
-          />
+          {canEdit ? (
+            <AttendanceStatusButton
+              schoolId={schoolId}
+              eventId={eventId}
+              childId={child.id}
+              childName={child.name}
+              status={status}
+            />
+          ) : (
+            // 締切後は表示のみ
+            <span
+              className={`block w-16 rounded-full py-1.5 text-center text-xs font-medium ${STATUS_STYLE[status]}`}
+            >
+              {STATUS_LABEL[status]}
+            </span>
+          )}
         </div>
       </div>
     </li>
