@@ -93,10 +93,19 @@ export default async function EventsPage({
       </section>
 
       {past.length > 0 && (
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-500">過去のイベント</h3>
-          <ul className="space-y-2">{past.map(renderRow)}</ul>
-        </section>
+        // 過去のイベントは増える一方なので既定では畳んでおく。
+        // 開閉だけなので details/summary で済ませる（クライアントJS不要）。
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-gray-500 [&::-webkit-details-marker]:hidden">
+            過去のイベント
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-normal text-gray-500">
+              {past.length}件
+            </span>
+            <span className="text-xs text-gray-400 group-open:hidden">表示する ▾</span>
+            <span className="hidden text-xs text-gray-400 group-open:inline">隠す ▴</span>
+          </summary>
+          <ul className="mt-3 space-y-2">{past.map(renderRow)}</ul>
+        </details>
       )}
     </div>
   );
