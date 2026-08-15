@@ -13,6 +13,8 @@ import {
 } from "@/lib/constants/children";
 import { FormError } from "@/components/ui/FormError";
 import { messageForCode } from "@/lib/errors";
+import { ClassBadges } from "@/components/ui/ClassBadges";
+import { ClassCheckboxes } from "@/components/ui/ClassCheckboxes";
 import { MasterSelect } from "@/components/ui/MasterSelect";
 import type { Category, ChildWithLabels, SchoolClass } from "@/types";
 
@@ -21,10 +23,18 @@ import { ChildrenListControls } from "./ChildrenListControls";
 import { InviteGuardianButton } from "./InviteGuardianButton";
 import { deleteChildAction, updateChildAction } from "./actions";
 
+const UNSET_ORDER = Number.MAX_SAFE_INTEGER;
+
 // 未設定は常に末尾へ送る。
 function orderOf(id: string | null, order: Map<string, number>) {
-  if (!id) return Number.MAX_SAFE_INTEGER;
-  return order.get(id) ?? Number.MAX_SAFE_INTEGER;
+  if (!id) return UNSET_ORDER;
+  return order.get(id) ?? UNSET_ORDER;
+}
+
+// クラスは掛け持ちがあるので、所属クラスのうち最も前のものを並び順に使う。
+function classOrderOf(ids: string[], order: Map<string, number>) {
+  if (ids.length === 0) return UNSET_ORDER;
+  return Math.min(...ids.map((id) => order.get(id) ?? UNSET_ORDER));
 }
 
 function sortChildren<T extends ChildWithLabels>(
@@ -48,7 +58,9 @@ function sortChildren<T extends ChildWithLabels>(
           orderOf(a.categoryId, categoryOrder) - orderOf(b.categoryId, categoryOrder) || byName(a, b)
         );
       case "class":
-        return orderOf(a.classId, classOrder) - orderOf(b.classId, classOrder) || byName(a, b);
+        return (
+          classOrderOf(a.classIds, classOrder) - classOrderOf(b.classIds, classOrder) || byName(a, b)
+        );
     }
   });
 }
@@ -81,13 +93,19 @@ export default async function ChildrenPage({
     ? await listChildrenWithGuardianName(schoolId)
     : (await listChildren(schoolId)).filter((c) => c.guardianId === user.id);
 
-  const matchesFilter = (value: string | null, filter: string) => {
+  const matchesCategory = (value: string | null, filter: string) => {
     if (!filter) return true;
     return filter === UNSET_FILTER ? value === null : value === filter;
   };
 
+  // クラスは掛け持ちがあるので「そのクラスに所属しているか」で判定する。
+  const matchesClass = (ids: string[], filter: string) => {
+    if (!filter) return true;
+    return filter === UNSET_FILTER ? ids.length === 0 : ids.includes(filter);
+  };
+
   const filtered = children.filter(
-    (c) => matchesFilter(c.categoryId, categoryFilter) && matchesFilter(c.classId, classFilter),
+    (c) => matchesCategory(c.categoryId, categoryFilter) && matchesClass(c.classIds, classFilter),
   );
   const visible = sortChildren(filtered, sort, categories, classes);
 
@@ -205,11 +223,8 @@ function ChildRow({
               {child.categoryName}
             </span>
           )}
-          {child.className && (
-            <span className="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700">
-              {child.className}
-            </span>
-          )}
+          {/* 掛け持ちしていても1行に収まるよう、2件までに畳む */}
+          <ClassBadges names={child.classNames} max={2} />
           <span className="ml-auto shrink-0 text-xs text-gray-400">▾</span>
         </summary>
 
@@ -250,20 +265,13 @@ function ChildRow({
               </div>
             )}
 
-            <div className="flex gap-2">
-              <MasterSelect
-                name="categoryId"
-                label="カテゴリー"
-                options={categories}
-                defaultValue={child.categoryId}
-              />
-              <MasterSelect
-                name="classId"
-                label="クラス"
-                options={classes}
-                defaultValue={child.classId}
-              />
-            </div>
+            <MasterSelect
+              name="categoryId"
+              label="カテゴリー"
+              options={categories}
+              defaultValue={child.categoryId}
+            />
+            <ClassCheckboxes options={classes} selectedIds={child.classIds} />
 
             <button
               type="submit"

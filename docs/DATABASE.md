@@ -11,6 +11,7 @@ Supabase (PostgreSQL) を使用。マイグレーションは `supabase/migratio
 7. `20260814_add_attendance_logs.sql` — 出欠の変更履歴
 8. `20260815_lock_school_creation.sql` — スクール新規作成の禁止
 9. `20260815_tighten_profiles_select.sql` — profiles の閲覧範囲を絞る
+10. `20260815_child_classes_many_to_many.sql` — クラスの掛け持ち対応（多対多へ移行）
 
 ## 前提: 単一スクール専用アプリ
 
@@ -38,15 +39,18 @@ values ('スクール名', '<運営者の auth.users.id>');
 | `school_members` | スクールへの所属。`role`: `admin` \| `guardian` |
 | `categories` | カテゴリー（U-10 等の学年区分）。スクール単位のマスタ。管理者のみ編集可 |
 | `classes` | クラス（火曜クラス等）。スクール単位のマスタ。管理者のみ編集可 |
-| `children` | 会員（子ども）。`guardian_id` は登録した保護者(`profiles.id`)。`category_id` / `class_id` を各1件参照 |
+| `children` | 会員（子ども）。`guardian_id` は登録した保護者(`profiles.id`)。`category_id` を1件参照 |
+| `child_classes` | 会員とクラスの中間テーブル。クラスは掛け持ちがあるため多対多 |
 | `events` | 練習・試合。`type`: `practice` \| `match` |
 | `attendance` | 出欠。`event_id` + `child_id` で一意。`status`: `attending` \| `absent` \| `undecided` |
 | `attendance_logs` | 出欠の変更履歴。`attendance` へのトリガーで自動記録。利用者は読み取りのみ |
 | `invitations` | 招待リンク。`token` + `expires_at`（7日間有効、失効しない限り使い回し可能） |
 
-`children.category_id` / `class_id` は NULL 許容（未分類の会員がありうる）で、マスタ削除時は
-`on delete set null`。他スクールのマスタIDを送り込まれないよう、Server Action 側でも
-自スクールの一覧に含まれるか検証している（`children/actions.ts` の `resolveMasterIds`）。
+カテゴリーは1人1つ（`children.category_id`、NULL許容・マスタ削除時は `on delete set null`）。
+クラスは「火曜と土曜の両方に通う」掛け持ちがあるため `child_classes` による多対多。
+
+他スクールのマスタIDを送り込まれないよう、Server Action 側でも自スクールの一覧に
+含まれるか検証している（`children/actions.ts` の `resolveMasterIds`）。
 
 ## ロールとアクセス制御
 
@@ -59,6 +63,7 @@ RLSは `get_my_role(p_school_id)`（`SECURITY DEFINER`）を軸に構成：
 - `schools`: 閲覧はメンバーのみ、**作成は禁止**（ポリシーと GRANT の両方を剥奪済み）、更新・削除は管理者のみ
 - `children` / `attendance`: 管理者はスクール内全件、保護者は自分の子どもの分のみ
 - `events` / `categories` / `classes`: 閲覧はメンバー全員、作成・変更・削除は管理者のみ
+- `child_classes`: `children` と同じ見え方（管理者は全件、保護者は自分の子どもの分のみ）
 - `invitations`: 閲覧・作成・削除とも管理者のみ
 - `profiles`: 自分自身／管理者から見た自スクールのメンバー／自分が所属するスクールの管理者、のみ閲覧可。
   保護者が他の保護者のプロフィール（氏名）を読むことはできない

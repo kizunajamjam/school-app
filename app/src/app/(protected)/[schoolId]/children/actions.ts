@@ -22,13 +22,16 @@ export async function createInvitationFromChildrenAction(formData: FormData) {
 }
 
 // 他スクールのマスタIDを送り込まれないよう、自スクールの一覧に含まれるか検証する。
-// 空文字は「未設定」として null に落とす。
+// カテゴリーは1件（空文字は「未設定」= null）、クラスは掛け持ちがあるので複数受け取る。
 async function resolveMasterIds(
   schoolId: string,
   formData: FormData,
-): Promise<{ categoryId: string | null; classId: string | null } | null> {
+): Promise<{ categoryId: string | null; classIds: string[] } | null> {
   const categoryId = String(formData.get("categoryId") ?? "") || null;
-  const classId = String(formData.get("classId") ?? "") || null;
+  const classIds = formData
+    .getAll("classIds")
+    .map((v) => String(v))
+    .filter(Boolean);
 
   const [categories, classes] = await Promise.all([
     listCategories(schoolId),
@@ -36,9 +39,9 @@ async function resolveMasterIds(
   ]);
 
   if (categoryId && !categories.some((c) => c.id === categoryId)) return null;
-  if (classId && !classes.some((c) => c.id === classId)) return null;
+  if (classIds.some((id) => !classes.some((c) => c.id === id))) return null;
 
-  return { categoryId, classId };
+  return { categoryId, classIds: [...new Set(classIds)] };
 }
 
 export async function createChildAction(formData: FormData) {
@@ -66,7 +69,7 @@ export async function createChildAction(formData: FormData) {
     name,
     grade,
     categoryId: masters.categoryId,
-    classId: masters.classId,
+    classIds: masters.classIds,
   });
   if (error) {
     redirect(`/${schoolId}/children?error=CHD_003`);
@@ -103,7 +106,7 @@ export async function updateChildAction(formData: FormData) {
     name,
     grade,
     categoryId: masters.categoryId,
-    classId: masters.classId,
+    classIds: masters.classIds,
   });
   if (error) {
     redirect(`/${schoolId}/children?error=CHD_004`);

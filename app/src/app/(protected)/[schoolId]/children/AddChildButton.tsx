@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ClassCheckboxes } from "@/components/ui/ClassCheckboxes";
 import { MasterSelect } from "@/components/ui/MasterSelect";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import type { Category, SchoolClass } from "@/types";
@@ -76,15 +77,13 @@ export function AddChildButton({
             />
           </div>
 
-          <div className="flex gap-2">
-            <MasterSelect
-              name="categoryId"
-              label="カテゴリー"
-              options={categories}
-              defaultValue={null}
-            />
-            <MasterSelect name="classId" label="クラス" options={classes} defaultValue={null} />
-          </div>
+          <MasterSelect
+            name="categoryId"
+            label="カテゴリー"
+            options={categories}
+            defaultValue={null}
+          />
+          <ClassCheckboxes options={classes} selectedIds={[]} />
 
           <div className="space-y-2 pt-1">
             <SubmitButton pendingText="登録中...">追加する</SubmitButton>

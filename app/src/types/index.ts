@@ -40,6 +40,7 @@ export type SchoolClass = {
   createdAt: string;
 };
 
+// カテゴリーは1人1つ。クラスは掛け持ちがあるため複数持てる。
 export type Child = {
   id: string;
   schoolId: string;
@@ -47,14 +48,14 @@ export type Child = {
   name: string;
   grade: string | null;
   categoryId: string | null;
-  classId: string | null;
+  classIds: string[];
   createdAt: string;
 };
 
 // 一覧表示用に、紐づくマスタの名前を解決したもの。
 export type ChildWithLabels = Child & {
   categoryName: string | null;
-  className: string | null;
+  classNames: string[];
 };
 
 export type SchoolEvent = {

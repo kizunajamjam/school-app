@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth-guard";
 import { getEvent } from "@/lib/db/events";
 import { listAttendanceForEvent, listAttendanceLogsByChild } from "@/lib/db/attendance";
 import { listChildren, listChildrenWithGuardianName } from "@/lib/db/children";
+import { ClassBadges } from "@/components/ui/ClassBadges";
 import { FormError } from "@/components/ui/FormError";
 import { messageForCode } from "@/lib/errors";
 import { STATUS_LABEL } from "@/lib/constants/attendance";
@@ -138,18 +139,15 @@ function AttendanceRow({
               {child.grade ? `（${child.grade}）` : ""}
             </span>
             <span className="ml-1 text-xs text-gray-400">▾</span>
-            {(child.categoryName || child.className || guardianName) && (
+            {(child.categoryName || child.classNames.length > 0 || guardianName) && (
               <span className="mt-0.5 flex flex-wrap items-center gap-1 text-xs">
                 {child.categoryName && (
                   <span className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700">
                     {child.categoryName}
                   </span>
                 )}
-                {child.className && (
-                  <span className="rounded-full bg-violet-50 px-2 py-0.5 text-violet-700">
-                    {child.className}
-                  </span>
-                )}
+                {/* 出欠画面では掛け持ち先も全部見せる */}
+                <ClassBadges names={child.classNames} />
                 {guardianName && <span className="text-gray-500">保護者: {guardianName}</span>}
               </span>
             )}

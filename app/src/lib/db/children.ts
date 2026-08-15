@@ -3,6 +3,8 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Child, ChildWithLabels } from "@/types";
 
+type ChildClassRow = { classes: { id: string; name: string } | { id: string; name: string }[] | null };
+
 type ChildRow = {
   id: string;
   school_id: string;
@@ -10,15 +12,22 @@ type ChildRow = {
   name: string;
   grade: string | null;
   category_id: string | null;
-  class_id: string | null;
   created_at: string;
+  categories?: { name: string } | { name: string }[] | null;
+  child_classes?: ChildClassRow[] | null;
+  profiles?: { display_name: string } | { display_name: string }[] | null;
 };
 
-type NamedRelation = { name: string } | { name: string }[] | null;
+function firstOf<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
 
-function relationName(relation: NamedRelation): string | null {
-  const row = Array.isArray(relation) ? relation[0] : relation;
-  return row?.name ?? null;
+// 掛け持ちがあるので、クラスは常に配列で扱う。
+function classesOf(row: ChildRow): { id: string; name: string }[] {
+  return (row.child_classes ?? [])
+    .map((link) => firstOf(link.classes))
+    .filter((c): c is { id: string; name: string } => c !== null);
 }
 
 function mapChild(row: ChildRow): Child {
@@ -29,13 +38,20 @@ function mapChild(row: ChildRow): Child {
     name: row.name,
     grade: row.grade,
     categoryId: row.category_id,
-    classId: row.class_id,
+    classIds: classesOf(row).map((c) => c.id),
     createdAt: row.created_at,
   };
 }
 
-// マスタ名まで解決した一覧。カテゴリー/クラスは未設定(null)がありうる。
-const WITH_LABELS_SELECT = "*, categories(name), classes(name)";
+function mapChildWithLabels(row: ChildRow): ChildWithLabels {
+  return {
+    ...mapChild(row),
+    categoryName: firstOf(row.categories)?.name ?? null,
+    classNames: classesOf(row).map((c) => c.name),
+  };
+}
+
+const WITH_LABELS_SELECT = "*, categories(name), child_classes(classes(id, name))";
 
 export async function listChildren(schoolId: string): Promise<ChildWithLabels[]> {
   const supabase = await createClient();
@@ -45,11 +61,7 @@ export async function listChildren(schoolId: string): Promise<ChildWithLabels[]>
     .eq("school_id", schoolId)
     .order("created_at", { ascending: true });
 
-  return (data ?? []).map((row) => ({
-    ...mapChild(row),
-    categoryName: relationName(row.categories),
-    className: relationName(row.classes),
-  }));
+  return (data ?? []).map(mapChildWithLabels);
 }
 
 export async function listChildrenWithGuardianName(
@@ -62,15 +74,29 @@ export async function listChildrenWithGuardianName(
     .eq("school_id", schoolId)
     .order("created_at", { ascending: true });
 
-  return (data ?? []).map((row) => {
-    const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-    return {
-      ...mapChild(row),
-      categoryName: relationName(row.categories),
-      className: relationName(row.classes),
-      guardianName: (profile?.display_name as string | undefined) ?? "不明",
-    };
-  });
+  return (data ?? []).map((row) => ({
+    ...mapChildWithLabels(row),
+    guardianName: firstOf(row.profiles)?.display_name ?? "不明",
+  }));
+}
+
+// クラスの割り当ては入れ替え（全消し→再作成）。件数が少ないので差分計算はしない。
+async function replaceChildClasses(childId: string, classIds: string[]) {
+  const supabase = await createClient();
+
+  const { error: deleteError } = await supabase
+    .from("child_classes")
+    .delete()
+    .eq("child_id", childId);
+  if (deleteError) return { error: deleteError };
+
+  if (classIds.length === 0) return { error: null };
+
+  const { error } = await supabase
+    .from("child_classes")
+    .insert(classIds.map((classId) => ({ child_id: childId, class_id: classId })));
+
+  return { error };
 }
 
 export async function createChild(input: {
@@ -79,7 +105,7 @@ export async function createChild(input: {
   name: string;
   grade: string | null;
   categoryId: string | null;
-  classId: string | null;
+  classIds: string[];
 }) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -90,12 +116,16 @@ export async function createChild(input: {
       name: input.name,
       grade: input.grade,
       category_id: input.categoryId,
-      class_id: input.classId,
     })
     .select("*")
     .single();
 
-  return { data: data ? mapChild(data) : null, error };
+  if (error || !data) return { data: null, error };
+
+  const { error: classError } = await replaceChildClasses(data.id, input.classIds);
+  if (classError) return { data: null, error: classError };
+
+  return { data: mapChild(data), error: null };
 }
 
 export async function updateChild(
@@ -104,7 +134,7 @@ export async function updateChild(
     name: string;
     grade: string | null;
     categoryId: string | null;
-    classId: string | null;
+    classIds: string[];
   },
 ) {
   const supabase = await createClient();
@@ -114,13 +144,17 @@ export async function updateChild(
       name: patch.name,
       grade: patch.grade,
       category_id: patch.categoryId,
-      class_id: patch.classId,
     })
     .eq("id", id)
     .select("*")
     .single();
 
-  return { data: data ? mapChild(data) : null, error };
+  if (error || !data) return { data: null, error };
+
+  const { error: classError } = await replaceChildClasses(id, patch.classIds);
+  if (classError) return { data: null, error: classError };
+
+  return { data: mapChild(data), error: null };
 }
 
 export async function deleteChild(id: string) {

@@ -173,7 +173,18 @@ function categoryForGrade(grade) {
 }
 
 const classNames = Object.keys(classes);
+
+// クラスは掛け持ちがあるので、3割ほどの子どもを2クラスに所属させる。
+function pickClasses() {
+  const first = pick(classNames);
+  if (rand() > 0.3) return [classes[first]];
+
+  const others = classNames.filter((n) => n !== first);
+  return [classes[first], classes[pick(others)]];
+}
+
 const childRows = [];
+const classAssignments = [];
 
 for (const [i, family] of FAMILIES.entries()) {
   const { userId } = await ensureGuardian(i + 1, family.guardian);
@@ -184,8 +195,8 @@ for (const [i, family] of FAMILIES.entries()) {
       name,
       grade,
       category_id: categoryForGrade(grade),
-      class_id: classes[pick(classNames)],
     });
+    classAssignments.push(pickClasses());
   }
 }
 
@@ -194,6 +205,11 @@ const { data: insertedChildren, error: childError } = await admin
   .insert(childRows)
   .select("id, name");
 must("会員作成", { error: childError });
+
+const classLinks = insertedChildren.flatMap((child, i) =>
+  classAssignments[i].map((classId) => ({ child_id: child.id, class_id: classId })),
+);
+must("クラス割り当て", await admin.from("child_classes").insert(classLinks));
 
 // デモ保護者の既存の子どもも対象に含める
 const { data: allChildren } = await admin

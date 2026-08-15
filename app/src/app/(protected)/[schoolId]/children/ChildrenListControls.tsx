@@ -124,15 +124,16 @@ function FilterDialogButton({
             </select>
           </label>
 
+          {/* 掛け持ちがあるので「そのクラスに所属しているか」で絞る */}
           <label className="block text-xs text-gray-500">
-            クラス
+            クラス（所属しているもので絞る）
             <select
               name="class"
               defaultValue={classFilter}
               className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900"
             >
               <option value="">すべて</option>
-              <option value={UNSET_FILTER}>未設定のみ</option>
+              <option value={UNSET_FILTER}>未所属のみ</option>
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
